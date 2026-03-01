@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACH Conferences — Five Decades of Digital Humanities</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://d3js.org/topojson.v3.min.js"></script>
+<style>
+:root {
+  --ivory: #F5F0E8;
+  --cream: #FFFDF7;
+  --navy: #1B2838;
+  --navy-light: #2A3F54;
+  --amber: #C4862B;
+  --amber-light: #E8A840;
+  --teal: #3D6B6B;
+  --teal-light: #4A8585;
+  --rust: #A0522D;
+  --text: #2C2C2C;
+  --text-muted: #6B6560;
+  --border: #D8D0C4;
+  --card-shadow: 0 2px 12px rgba(27,40,56,0.06);
+  --card-shadow-hover: 0 4px 20px rgba(27,40,56,0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  background: var(--ivory);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.site-header {
+  background: var(--navy);
+  color: var(--cream);
+  padding: 3rem 2rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.site-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--amber), var(--teal), var(--amber));
+}
+.header-inner { max-width: 1400px; margin: 0 auto; }
+.header-label {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600; font-size: 0.75rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--amber); margin-bottom: 0.5rem;
+}
+.header-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.1; margin-bottom: 0.5rem;
+}
+.header-title em { font-style: italic; font-weight: 400; color: var(--amber-light); }
+.header-subtitle {
+  font-weight: 300; font-size: 1.1rem;
+  color: rgba(255,253,247,0.6); max-width: 600px;
+}
+
+.filter-bar {
+  background: var(--cream);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 2rem;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.filter-inner {
+  max-width: 1400px; margin: 0 auto;
+  display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+}
+.filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
+.filter-label {
+  font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.filter-group select, .filter-group input[type="text"] {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.85rem; padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border); border-radius: 4px;
+  background: white; color: var(--text);
+  outline: none; transition: border-color 0.2s;
+}
+.filter-group select:focus, .filter-group input:focus { border-color: var(--amber); }
+
+.year-range-container { flex: 1; min-width: 250px; max-width: 400px; }
+.year-range-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem; font-weight: 500;
+  color: var(--navy); text-align: center; margin-bottom: 0.25rem;
+}
+.dual-range { position: relative; height: 28px; }
+.dual-range input[type="range"] {
+  position: absolute; width: 100%;
+  -webkit-appearance: none; appearance: none;
+  background: transparent; pointer-events: none;
+  top: 0; height: 28px;
+}
+.dual-range input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--navy); border: 3px solid var(--cream);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  cursor: pointer; pointer-events: auto;
+  position: relative; z-index: 2;
+}
+.dual-range input[type="range"]::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--navy); border: 3px solid var(--cream);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  cursor: pointer; pointer-events: auto;
+}
+.range-track {
+  position: absolute; top: 11px; left: 0; right: 0;
+  height: 4px; background: var(--border); border-radius: 2px;
+}
+.range-track-fill {
+  position: absolute; top: 11px; height: 4px;
+  background: var(--amber); border-radius: 2px;
+}
+
+.filter-reset {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.8rem; font-weight: 600;
+  color: var(--amber); background: none;
+  border: 1px solid var(--amber); border-radius: 4px;
+  padding: 0.4rem 1rem; cursor: pointer;
+  transition: all 0.2s; align-self: flex-end;
+}
+.filter-reset:hover { background: var(--amber); color: white; }
+.active-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem; color: var(--text-muted);
+  align-self: flex-end; padding-bottom: 0.4rem;
+}
+
+.stats-row {
+  max-width: 1400px; margin: 2rem auto; padding: 0 2rem;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;
+}
+.stat-card {
+  background: var(--cream); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.25rem 1.5rem;
+  box-shadow: var(--card-shadow);
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+.stat-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
+.stat-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem; font-weight: 900;
+  color: var(--navy); line-height: 1;
+}
+.stat-label {
+  font-size: 0.75rem; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-muted); margin-top: 0.25rem;
+}
+
+.main-content { max-width: 1400px; margin: 0 auto; padding: 0 2rem 4rem; }
+.section { margin-bottom: 2.5rem; }
+.section-header {
+  display: flex; align-items: baseline; gap: 1rem;
+  margin-bottom: 1rem; border-bottom: 2px solid var(--navy); padding-bottom: 0.5rem;
+}
+.section-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.9rem; font-weight: 700; color: var(--amber);
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; font-weight: 700; color: var(--navy);
+}
+.section-note {
+  font-size: 0.8rem; color: var(--text-muted);
+  margin-left: auto; font-style: italic;
+}
+
+.chart-card {
+  background: var(--cream); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.5rem;
+  box-shadow: var(--card-shadow); overflow: hidden;
+}
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
+
+.chart-card svg { width: 100%; display: block; }
+.axis text { font-family: 'Source Sans 3', sans-serif; font-size: 11px; fill: var(--text-muted); }
+.axis line, .axis path { stroke: var(--border); }
+.bar-label { font-family: 'Source Sans 3', sans-serif; font-size: 11px; fill: var(--text); }
+
+.chart-tooltip {
+  position: fixed; background: var(--navy); color: var(--cream);
+  padding: 0.5rem 0.75rem; border-radius: 4px; font-size: 0.8rem;
+  pointer-events: none; z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  max-width: 280px; opacity: 0; transition: opacity 0.15s;
+}
+.chart-tooltip.visible { opacity: 1; }
+
+.map-container { position: relative; }
+.map-legend {
+  position: absolute; bottom: 1rem; left: 1rem;
+  background: rgba(255,253,247,0.92);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 0.6rem 0.8rem; font-size: 0.7rem;
+}
+
+.table-controls { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.table-search {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.9rem; padding: 0.5rem 1rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: white; width: 300px;
+  outline: none; transition: border-color 0.2s;
+}
+.table-search:focus { border-color: var(--amber); }
+.table-count {
+  font-size: 0.8rem; color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.data-table thead th {
+  font-weight: 700; text-transform: uppercase;
+  font-size: 0.7rem; letter-spacing: 0.1em;
+  color: var(--text-muted); padding: 0.6rem 0.75rem;
+  text-align: left; border-bottom: 2px solid var(--navy);
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+.data-table thead th:hover { color: var(--navy); }
+.data-table thead th.sorted-asc::after { content: ' \u25B2'; font-size: 0.6rem; }
+.data-table thead th.sorted-desc::after { content: ' \u25BC'; font-size: 0.6rem; }
+.data-table tbody tr {
+  border-bottom: 1px solid var(--border); transition: background 0.15s;
+}
+.data-table tbody tr:hover { background: rgba(196,134,43,0.06); }
+.data-table td { padding: 0.6rem 0.75rem; vertical-align: top; }
+.td-year { font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--navy); white-space: nowrap; }
+.td-title { font-weight: 600; max-width: 350px; }
+.td-panel { color: var(--text-muted); font-style: italic; max-width: 250px; }
+.td-inst { max-width: 200px; }
+.td-type {
+  font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+}
+.kw-tag {
+  display: inline-block; background: rgba(61,107,107,0.1);
+  color: var(--teal); font-size: 0.7rem;
+  padding: 0.1rem 0.4rem; border-radius: 3px;
+  margin: 0.1rem 0.15rem; cursor: pointer; transition: all 0.15s;
+}
+.kw-tag:hover { background: var(--teal); color: white; }
+
+.table-pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.5rem; margin-top: 1rem;
+}
+.page-btn {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.8rem; padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border); border-radius: 4px;
+  background: white; cursor: pointer; transition: all 0.15s;
+}
+.page-btn:hover { border-color: var(--amber); color: var(--amber); }
+.page-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+.page-btn:disabled { opacity: 0.3; cursor: default; }
+
+.site-footer {
+  background: var(--navy); color: rgba(255,253,247,0.5);
+  padding: 2rem; text-align: center; font-size: 0.8rem;
+}
+.site-footer a { color: var(--amber-light); text-decoration: none; }
+
+.loading-overlay {
+  position: fixed; inset: 0; background: var(--navy);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; z-index: 10000; transition: opacity 0.5s;
+}
+.loading-overlay.hidden { opacity: 0; pointer-events: none; }
+.loading-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; color: var(--cream); margin-bottom: 1rem;
+}
+.loading-bar { width: 200px; height: 3px; background: var(--navy-light); border-radius: 2px; overflow: hidden; }
+.loading-bar-fill {
+  height: 100%; background: var(--amber); border-radius: 2px;
+  animation: loading 1.5s ease-in-out infinite;
+}
+@keyframes loading {
+  0% { width: 0; margin-left: 0; }
+  50% { width: 70%; margin-left: 15%; }
+  100% { width: 0; margin-left: 100%; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: fadeUp 0.5s ease-out forwards; opacity: 0; }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="loading-text">Loading the Archive&hellip;</div>
+  <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+</div>
+
+<div class="chart-tooltip" id="tooltip"></div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-label">Association for Computers &amp; the Humanities</div>
+    <h1 class="header-title">Five Decades of <em>Digital Humanities</em></h1>
+    <p class="header-subtitle">Exploring 2,700+ presentations across 26 ACH conferences, from 1973 to 2022.</p>
+  </div>
+</header>
+
+<div class="filter-bar">
+  <div class="filter-inner">
+    <div class="filter-group year-range-container">
+      <div class="filter-label">Year Range</div>
+      <div class="year-range-display" id="yearDisplay">1973 — 2022</div>
+      <div class="dual-range">
+        <div class="range-track"></div>
+        <div class="range-track-fill" id="trackFill"></div>
+        <input type="range" id="yearMin" min="1973" max="2022" value="1973">
+        <input type="range" id="yearMax" min="1973" max="2022" value="2022">
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Organizers</div>
+      <select id="filterOrg">
+        <option value="all">All Conferences</option>
+        <option value="ach-only">ACH Only</option>
+        <option value="ach-allc">ACH + ALLC Joint</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Presentation Type</div>
+      <select id="filterType">
+        <option value="all">All Types</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Keyword Filter</div>
+      <input type="text" id="filterKeyword" placeholder="e.g. text encoding">
+    </div>
+    <button class="filter-reset" id="resetFilters">Reset All</button>
+    <div class="active-count" id="activeCount"></div>
+  </div>
+</div>
+
+<div class="stats-row" id="statsRow">
+  <div class="stat-card animate-in" style="animation-delay:0.1s">
+    <div class="stat-value" id="statPresentations">&mdash;</div>
+    <div class="stat-label">Presentations</div>
+  </div>
+  <div class="stat-card animate-in" style="animation-delay:0.2s">
+    <div class="stat-value" id="statConferences">&mdash;</div>
+    <div class="stat-label">Conferences</div>
+  </div>
+  <div class="stat-card animate-in" style="animation-delay:0.3s">
+    <div class="stat-value" id="statInstitutions">&mdash;</div>
+    <div class="stat-label">Institutions</div>
+  </div>
+  <div class="stat-card animate-in" style="animation-delay:0.4s">
+    <div class="stat-value" id="statKeywords">&mdash;</div>
+    <div class="stat-label">Unique Keywords</div>
+  </div>
+  <div class="stat-card animate-in" style="animation-delay:0.5s">
+    <div class="stat-value" id="statCountries">&mdash;</div>
+    <div class="stat-label">Countries</div>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="section animate-in" style="animation-delay:0.3s">
+    <div class="section-header">
+      <span class="section-number">01</span>
+      <span class="section-title">Presentations Over Time</span>
+      <span class="section-note">by conference year</span>
+    </div>
+    <div class="chart-card"><div id="timelineChart"></div></div>
+  </div>
+
+  <div class="section animate-in" style="animation-delay:0.4s">
+    <div class="chart-row">
+      <div>
+        <div class="section-header">
+          <span class="section-number">02</span>
+          <span class="section-title">Top Keywords</span>
+          <span class="section-note">click to filter</span>
+        </div>
+        <div class="chart-card"><div id="keywordsChart"></div></div>
+      </div>
+      <div>
+        <div class="section-header">
+          <span class="section-number">03</span>
+          <span class="section-title">Top Institutions</span>
+        </div>
+        <div class="chart-card"><div id="institutionsChart"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in" style="animation-delay:0.5s">
+    <div class="chart-row">
+      <div>
+        <div class="section-header">
+          <span class="section-number">04</span>
+          <span class="section-title">Geographic Reach</span>
+          <span class="section-note">by institution country</span>
+        </div>
+        <div class="chart-card map-container"><div id="mapChart"></div><div class="map-legend" id="mapLegend"></div></div>
+      </div>
+      <div>
+        <div class="section-header">
+          <span class="section-number">05</span>
+          <span class="section-title">Keyword Trends</span>
+          <span class="section-note">top 5 keywords across time</span>
+        </div>
+        <div class="chart-card"><div id="trendsChart"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section animate-in" style="animation-delay:0.6s">
+    <div class="section-header">
+      <span class="section-number">06</span>
+      <span class="section-title">All Presentations</span>
+    </div>
+    <div class="chart-card">
+      <div class="table-controls">
+        <input type="text" class="table-search" id="tableSearch" placeholder="Search titles, panels, institutions...">
+        <div class="table-count" id="tableCount"></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table" id="dataTable">
+          <thead><tr>
+            <th data-col="year">Year</th>
+            <th data-col="title">Title</th>
+            <th data-col="panel">Panel / Session</th>
+            <th data-col="institutions">Institution</th>
+            <th data-col="keywords">Keywords</th>
+            <th data-col="type">Type</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="table-pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  Data source: <a href="https://dh-abstracts.library.virginia.edu/" target="_blank">Index of DH Conferences</a>, University of Virginia Library.
+  Keywords generated where missing via OpenAI GPT-5.2.
+</footer>
+
+<script>
+// NOTE: All dynamic content is derived from trusted local JSON data (ach_data.json).
+// No user-submitted or external untrusted content is rendered.
+const COLORS = {
+  navy: '#1B2838', amber: '#C4862B', amberLight: '#E8A840',
+  teal: '#3D6B6B', tealLight: '#4A8585', rust: '#A0522D',
+  border: '#D8D0C4', text: '#2C2C2C', textMuted: '#6B6560',
+};
+const PALETTE = ['#C4862B','#3D6B6B','#A0522D','#5B7B95','#8B6B4A','#6B8E6B','#7B6B8E','#8E6B6B','#6B7B8E','#4A6B5B'];
+
+let DATA = null, filtered = [], activeKeyword = null;
+let tablePage = 0, tableSort = { col: 'year', dir: 'asc' };
+const PAGE_SIZE = 50;
+const tooltip = document.getElementById('tooltip');
+
+function showTooltip(evt, titleText, valueText) {
+  tooltip.textContent = '';
+  const t = document.createElement('div');
+  t.style.fontWeight = '700';
+  t.style.marginBottom = '2px';
+  t.textContent = titleText;
+  const v = document.createElement('div');
+  v.style.fontFamily = "'JetBrains Mono', monospace";
+  v.style.color = COLORS.amberLight;
+  v.textContent = valueText;
+  tooltip.appendChild(t);
+  tooltip.appendChild(v);
+  tooltip.classList.add('visible');
+  const x = Math.min(evt.clientX + 12, window.innerWidth - 300);
+  const y = Math.min(evt.clientY - 10, window.innerHeight - 80);
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+function hideTooltip() { tooltip.classList.remove('visible'); }
+
+async function loadData() {
+  const resp = await fetch('ach_data.json');
+  DATA = await resp.json();
+  const types = new Set();
+  DATA.records.forEach(r => { if (r.type) types.add(r.type); });
+  const sel = document.getElementById('filterType');
+  [...types].sort().forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    sel.appendChild(o);
+  });
+  applyFilters();
+  document.getElementById('loading').classList.add('hidden');
+}
+
+function applyFilters() {
+  const yMin = +document.getElementById('yearMin').value;
+  const yMax = +document.getElementById('yearMax').value;
+  const org = document.getElementById('filterOrg').value;
+  const type = document.getElementById('filterType').value;
+  const kwFilter = document.getElementById('filterKeyword').value.toLowerCase().trim();
+
+  filtered = DATA.records.filter(r => {
+    if (r.year < yMin || r.year > yMax) return false;
+    if (r.is_parent) return false;
+    if (type !== 'all' && r.type !== type) return false;
+    if (org === 'ach-only' && r.organizers !== 'ACH' && !/^ACH; KeystoneDH$/.test(r.organizers) && !/^ACH; CSDH/.test(r.organizers)) return false;
+    if (org === 'ach-allc' && !r.organizers.includes('ALLC')) return false;
+    if (kwFilter && !r.keywords.some(k => k.toLowerCase().includes(kwFilter))) return false;
+    if (activeKeyword && !r.keywords.includes(activeKeyword)) return false;
+    return true;
+  });
+
+  document.getElementById('yearDisplay').textContent = yMin + ' \u2014 ' + yMax;
+  updateTrackFill(yMin, yMax);
+
+  const confs = new Set(filtered.map(r => r.conference));
+  const insts = new Set(); filtered.forEach(r => r.institutions.forEach(i => insts.add(i)));
+  const kws = new Set(); filtered.forEach(r => r.keywords.forEach(k => kws.add(k)));
+  const countries = new Set(); filtered.forEach(r => r.countries.forEach(c => countries.add(c)));
+
+  document.getElementById('statPresentations').textContent = filtered.length.toLocaleString();
+  document.getElementById('statConferences').textContent = String(confs.size);
+  document.getElementById('statInstitutions').textContent = insts.size.toLocaleString();
+  document.getElementById('statKeywords').textContent = kws.size.toLocaleString();
+  document.getElementById('statCountries').textContent = String(countries.size);
+  document.getElementById('activeCount').textContent = filtered.length + ' of ' + DATA.records.filter(r => !r.is_parent).length + ' presentations';
+
+  tablePage = 0;
+  renderAll();
+}
+
+function updateTrackFill(min, max) {
+  const pct = v => ((v - 1973) / (2022 - 1973)) * 100;
+  const fill = document.getElementById('trackFill');
+  fill.style.left = pct(min) + '%';
+  fill.style.width = (pct(max) - pct(min)) + '%';
+}
+
+function renderAll() {
+  renderTimeline();
+  renderKeywords();
+  renderInstitutions();
+  renderMap();
+  renderTrends();
+  renderTable();
+}
+
+function renderTimeline() {
+  const container = document.getElementById('timelineChart');
+  container.textContent = '';
+  const margin = {top: 20, right: 30, bottom: 40, left: 50};
+  const width = container.clientWidth - margin.left - margin.right;
+  const height = 220 - margin.top - margin.bottom;
+  const svg = d3.select(container).append('svg')
+    .attr('viewBox', '0 0 ' + (width + margin.left + margin.right) + ' ' + (height + margin.top + margin.bottom))
+    .append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  const byYear = d3.rollup(filtered, v => v.length, d => d.year);
+  const yMin = +document.getElementById('yearMin').value;
+  const yMax = +document.getElementById('yearMax').value;
+  const years = DATA.meta.years.filter(y => y >= yMin && y <= yMax);
+  const data = years.map(y => ({year: y, count: byYear.get(y) || 0}));
+
+  const x = d3.scaleBand().domain(years).range([0, width]).padding(0.3);
+  const y = d3.scaleLinear().domain([0, d3.max(data, d => d.count) || 1]).nice().range([height, 0]);
+
+  svg.append('g').attr('class', 'axis').attr('transform', 'translate(0,' + height + ')')
+    .call(d3.axisBottom(x).tickValues(years.filter((_, i) => years.length <= 15 || i % 2 === 0)));
+  svg.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(5));
+
+  svg.selectAll('.bar').data(data).join('rect')
+    .attr('x', d => x(d.year)).attr('y', d => y(d.count))
+    .attr('width', x.bandwidth()).attr('height', d => height - y(d.count))
+    .attr('fill', COLORS.amber).attr('rx', 2).style('cursor', 'pointer')
+    .on('mousemove', (evt, d) => showTooltip(evt, String(d.year), d.count + ' presentations'))
+    .on('mouseleave', hideTooltip);
+}
+
+function renderKeywords() {
+  const container = document.getElementById('keywordsChart');
+  container.textContent = '';
+  const margin = {top: 10, right: 60, bottom: 10, left: 160};
+  const barH = 20, gap = 4, N = 20;
+  const kwCount = {};
+  filtered.forEach(r => r.keywords.forEach(k => { kwCount[k] = (kwCount[k]||0) + 1; }));
+  const data = Object.entries(kwCount).sort((a,b) => b[1]-a[1]).slice(0, N).map(([k,v]) => ({keyword:k, count:v}));
+  const height = data.length * (barH + gap);
+  const width = container.clientWidth - margin.left - margin.right;
+  const svg = d3.select(container).append('svg')
+    .attr('viewBox', '0 0 ' + (width + margin.left + margin.right) + ' ' + (height + margin.top + margin.bottom))
+    .append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+  const x = d3.scaleLinear().domain([0, d3.max(data, d => d.count)]).range([0, width]);
+  const y = d3.scaleBand().domain(data.map(d => d.keyword)).range([0, height]).padding(0.15);
+
+  svg.selectAll('.bar').data(data).join('rect')
+    .attr('x', 0).attr('y', d => y(d.keyword))
+    .attr('width', d => x(d.count)).attr('height', y.bandwidth())
+    .attr('fill', d => d.keyword === activeKeyword ? COLORS.amber : COLORS.teal)
+    .attr('rx', 3).style('cursor', 'pointer')
+    .on('click', (_, d) => { activeKeyword = activeKeyword === d.keyword ? null : d.keyword; document.getElementById('filterKeyword').value = activeKeyword || ''; applyFilters(); })
+    .on('mousemove', (evt, d) => showTooltip(evt, d.keyword, d.count + ' presentations'))
+    .on('mouseleave', hideTooltip);
+  svg.selectAll('.label').data(data).join('text').attr('class', 'bar-label')
+    .attr('x', -8).attr('y', d => y(d.keyword) + y.bandwidth()/2)
+    .attr('text-anchor', 'end').attr('dy', '0.35em').text(d => d.keyword)
+    .style('font-size', '11px').style('cursor', 'pointer')
+    .on('click', (_, d) => { activeKeyword = activeKeyword === d.keyword ? null : d.keyword; document.getElementById('filterKeyword').value = activeKeyword || ''; applyFilters(); });
+  svg.selectAll('.count').data(data).join('text').attr('class', 'bar-label')
+    .attr('x', d => x(d.count) + 6).attr('y', d => y(d.keyword) + y.bandwidth()/2)
+    .attr('dy', '0.35em').text(d => d.count)
+    .style('font-family', "'JetBrains Mono', monospace").style('font-size', '10px').style('fill', COLORS.textMuted);
+}
+
+function renderInstitutions() {
+  const container = document.getElementById('institutionsChart');
+  container.textContent = '';
+  const margin = {top: 10, right: 60, bottom: 10, left: 200};
+  const barH = 20, gap = 4, N = 20;
+  const instCount = {};
+  filtered.forEach(r => r.institutions.forEach(i => { instCount[i] = (instCount[i]||0) + 1; }));
+  const data = Object.entries(instCount).sort((a,b) => b[1]-a[1]).slice(0, N).map(([k,v]) => ({inst:k, count:v}));
+  const height = data.length * (barH + gap);
+  const width = container.clientWidth - margin.left - margin.right;
+  const svg = d3.select(container).append('svg')
+    .attr('viewBox', '0 0 ' + (width + margin.left + margin.right) + ' ' + (height + margin.top + margin.bottom))
+    .append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+  const x = d3.scaleLinear().domain([0, d3.max(data, d => d.count)]).range([0, width]);
+  const y = d3.scaleBand().domain(data.map(d => d.inst)).range([0, height]).padding(0.15);
+
+  svg.selectAll('.bar').data(data).join('rect')
+    .attr('x', 0).attr('y', d => y(d.inst))
+    .attr('width', d => x(d.count)).attr('height', y.bandwidth())
+    .attr('fill', COLORS.navy).attr('rx', 3)
+    .on('mousemove', (evt, d) => showTooltip(evt, d.inst, d.count + ' presentations'))
+    .on('mouseleave', hideTooltip);
+  svg.selectAll('.label').data(data).join('text').attr('class', 'bar-label')
+    .attr('x', -8).attr('y', d => y(d.inst) + y.bandwidth()/2)
+    .attr('text-anchor', 'end').attr('dy', '0.35em')
+    .text(d => d.inst.length > 30 ? d.inst.slice(0,28) + '\u2026' : d.inst)
+    .style('font-size', '10px');
+  svg.selectAll('.count').data(data).join('text').attr('class', 'bar-label')
+    .attr('x', d => x(d.count) + 6).attr('y', d => y(d.inst) + y.bandwidth()/2)
+    .attr('dy', '0.35em').text(d => d.count)
+    .style('font-family', "'JetBrains Mono', monospace").style('font-size', '10px').style('fill', COLORS.textMuted);
+}
+
+async function renderMap() {
+  const container = document.getElementById('mapChart');
+  container.textContent = '';
+  const width = container.clientWidth;
+  const height = 340;
+  const svg = d3.select(container).append('svg').attr('viewBox', '0 0 ' + width + ' ' + height);
+
+  const countryCount = {};
+  filtered.forEach(r => r.countries.forEach(c => { countryCount[c] = (countryCount[c]||0)+1; }));
+
+  try {
+    const world = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r => r.json());
+    const countries = topojson.feature(world, world.objects.countries);
+    const projection = d3.geoNaturalEarth1().fitSize([width - 20, height - 20], countries).translate([width/2, height/2]);
+    const pathGen = d3.geoPath().projection(projection);
+
+    svg.selectAll('path').data(countries.features).join('path')
+      .attr('d', pathGen).attr('fill', '#E8E2D8').attr('stroke', '#D8D0C4').attr('stroke-width', 0.5);
+
+    const centroids = {};
+    const nameMap = {
+      'United States': 'United States of America', 'United Kingdom': 'United Kingdom',
+      'Canada': 'Canada', 'Germany': 'Germany', 'France': 'France', 'Italy': 'Italy',
+      'Spain': 'Spain', 'Japan': 'Japan', 'Australia': 'Australia', 'Netherlands': 'Netherlands',
+      'Norway': 'Norway', 'Belgium': 'Belgium', 'Ireland': 'Ireland', 'Austria': 'Austria',
+      'Finland': 'Finland', 'Sweden': 'Sweden', 'Denmark': 'Denmark', 'Switzerland': 'Switzerland',
+      'Israel': 'Israel', 'Poland': 'Poland', 'Czech Republic': 'Czechia', 'Hungary': 'Hungary',
+      'Portugal': 'Portugal', 'Greece': 'Greece', 'Romania': 'Romania', 'Bulgaria': 'Bulgaria',
+      'South Korea': 'South Korea', 'China': 'China', 'India': 'India', 'Brazil': 'Brazil',
+      'Mexico': 'Mexico', 'South Africa': 'South Africa', 'Russia': 'Russia',
+      'New Zealand': 'New Zealand', 'Taiwan': 'Taiwan', 'Singapore': 'Singapore',
+      'Turkey': 'Turkey', 'Croatia': 'Croatia', 'Slovenia': 'Slovenia',
+    };
+    countries.features.forEach(f => {
+      const c = pathGen.centroid(f);
+      if (c[0] && c[1]) centroids[f.properties.name] = c;
+    });
+
+    const maxCount = d3.max(Object.values(countryCount)) || 1;
+    const rScale = d3.scaleSqrt().domain([1, maxCount]).range([3, 35]);
+    const bubbleData = Object.entries(countryCount).map(([name, count]) => {
+      const mapped = nameMap[name] || name;
+      const pos = centroids[mapped];
+      return pos ? { name, count, x: pos[0], y: pos[1] } : null;
+    }).filter(Boolean).sort((a,b) => b.count - a.count);
+
+    svg.selectAll('circle').data(bubbleData).join('circle')
+      .attr('cx', d => d.x).attr('cy', d => d.y)
+      .attr('r', d => rScale(d.count))
+      .attr('fill', COLORS.amber).attr('fill-opacity', 0.7)
+      .attr('stroke', COLORS.amber).attr('stroke-width', 1)
+      .on('mousemove', (evt, d) => showTooltip(evt, d.name, d.count + ' presentations'))
+      .on('mouseleave', hideTooltip);
+
+    const legend = document.getElementById('mapLegend');
+    legend.textContent = '';
+    [1, Math.round(maxCount/4), Math.round(maxCount/2)].forEach(s => {
+      const row = document.createElement('div');
+      row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '6px'; row.style.marginBottom = '3px';
+      const circle = document.createElement('div');
+      const sz = rScale(s) * 2;
+      circle.style.width = sz + 'px'; circle.style.height = sz + 'px';
+      circle.style.borderRadius = '50%'; circle.style.background = COLORS.amber; circle.style.opacity = '0.7'; circle.style.flexShrink = '0';
+      const label = document.createElement('span');
+      label.textContent = String(s);
+      row.appendChild(circle); row.appendChild(label);
+      legend.appendChild(row);
+    });
+  } catch(e) {
+    const msg = document.createElement('p');
+    msg.textContent = 'Map data unavailable';
+    msg.style.cssText = 'color:#999;padding:2rem;text-align:center';
+    container.appendChild(msg);
+  }
+}
+
+function renderTrends() {
+  const container = document.getElementById('trendsChart');
+  container.textContent = '';
+  const margin = {top: 20, right: 120, bottom: 40, left: 50};
+  const width = container.clientWidth - margin.left - margin.right;
+  const height = 280 - margin.top - margin.bottom;
+
+  const kwCount = {};
+  filtered.forEach(r => r.keywords.forEach(k => { kwCount[k] = (kwCount[k]||0)+1; }));
+  const topKws = Object.entries(kwCount).sort((a,b) => b[1]-a[1]).slice(0,5).map(d => d[0]);
+  const years = [...new Set(filtered.map(r => r.year))].sort();
+  const series = topKws.map(kw => ({
+    keyword: kw,
+    values: years.map(y => ({ year: y, count: filtered.filter(r => r.year === y && r.keywords.includes(kw)).length }))
+  }));
+
+  const svg = d3.select(container).append('svg')
+    .attr('viewBox', '0 0 ' + (width + margin.left + margin.right) + ' ' + (height + margin.top + margin.bottom))
+    .append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  const x = d3.scalePoint().domain(years).range([0, width]);
+  const yMax = d3.max(series, s => d3.max(s.values, d => d.count)) || 1;
+  const y = d3.scaleLinear().domain([0, yMax]).nice().range([height, 0]);
+  const color = d3.scaleOrdinal().domain(topKws).range(PALETTE);
+  const line = d3.line().x(d => x(d.year)).y(d => y(d.count)).curve(d3.curveMonotoneX);
+
+  svg.append('g').attr('class', 'axis').attr('transform', 'translate(0,' + height + ')')
+    .call(d3.axisBottom(x).tickValues(years.filter((_, i) => years.length <= 15 || i % 2 === 0)));
+  svg.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(5));
+
+  series.forEach((s, i) => {
+    svg.append('path').datum(s.values).attr('fill', 'none')
+      .attr('stroke', color(s.keyword)).attr('stroke-width', 2.5).attr('d', line);
+    const last = s.values[s.values.length - 1];
+    if (last) {
+      svg.append('text').attr('x', x(last.year) + 8).attr('y', y(last.count))
+        .attr('dy', '0.35em').attr('fill', color(s.keyword))
+        .style('font-size', '10px').style('font-weight', '600')
+        .text(s.keyword.length > 18 ? s.keyword.slice(0,16) + '\u2026' : s.keyword);
+    }
+    svg.selectAll('.dot-' + i).data(s.values.filter(d => d.count > 0)).join('circle')
+      .attr('cx', d => x(d.year)).attr('cy', d => y(d.count))
+      .attr('r', 3).attr('fill', color(s.keyword))
+      .on('mousemove', (evt, d) => showTooltip(evt, s.keyword, d.year + ': ' + d.count + ' presentations'))
+      .on('mouseleave', hideTooltip);
+  });
+}
+
+function renderTable() {
+  const search = document.getElementById('tableSearch').value.toLowerCase();
+  let rows = filtered;
+  if (search) {
+    rows = rows.filter(r =>
+      r.title.toLowerCase().includes(search) ||
+      r.panel.toLowerCase().includes(search) ||
+      r.institutions.some(i => i.toLowerCase().includes(search)) ||
+      r.keywords.some(k => k.toLowerCase().includes(search))
+    );
+  }
+  rows = [...rows].sort((a, b) => {
+    let va = a[tableSort.col], vb = b[tableSort.col];
+    if (Array.isArray(va)) va = va.join(', ');
+    if (Array.isArray(vb)) vb = vb.join(', ');
+    if (typeof va === 'number') return tableSort.dir === 'asc' ? va - vb : vb - va;
+    return tableSort.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+  });
+
+  document.getElementById('tableCount').textContent = rows.length + ' results';
+  const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+  const pageRows = rows.slice(tablePage * PAGE_SIZE, (tablePage+1) * PAGE_SIZE);
+
+  const tbody = document.getElementById('tableBody');
+  tbody.textContent = '';
+  pageRows.forEach(r => {
+    const tr = document.createElement('tr');
+
+    const tdYear = document.createElement('td'); tdYear.className = 'td-year'; tdYear.textContent = String(r.year); tr.appendChild(tdYear);
+    const tdTitle = document.createElement('td'); tdTitle.className = 'td-title'; tdTitle.textContent = r.title; tr.appendChild(tdTitle);
+    const tdPanel = document.createElement('td'); tdPanel.className = 'td-panel'; tdPanel.textContent = r.panel; tr.appendChild(tdPanel);
+    const tdInst = document.createElement('td'); tdInst.className = 'td-inst'; tdInst.textContent = r.institutions.join('; '); tr.appendChild(tdInst);
+
+    const tdKw = document.createElement('td'); tdKw.className = 'td-kw';
+    r.keywords.forEach(k => {
+      const span = document.createElement('span');
+      span.className = 'kw-tag';
+      span.textContent = k;
+      span.addEventListener('click', () => {
+        activeKeyword = activeKeyword === k ? null : k;
+        document.getElementById('filterKeyword').value = activeKeyword || '';
+        applyFilters();
+      });
+      tdKw.appendChild(span);
+    });
+    tr.appendChild(tdKw);
+
+    const tdType = document.createElement('td'); tdType.className = 'td-type'; tdType.textContent = r.type; tr.appendChild(tdType);
+    tbody.appendChild(tr);
+  });
+
+  const pag = document.getElementById('pagination');
+  pag.textContent = '';
+  if (totalPages <= 1) return;
+
+  function makeBtn(text, page, disabled, active) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (active ? ' active' : '');
+    btn.textContent = text;
+    btn.disabled = disabled;
+    if (!disabled) btn.addEventListener('click', () => { tablePage = page; renderTable(); });
+    return btn;
+  }
+  pag.appendChild(makeBtn('Prev', tablePage - 1, tablePage === 0, false));
+  const start = Math.max(0, tablePage - 3);
+  const end = Math.min(totalPages, start + 7);
+  for (let i = start; i < end; i++) pag.appendChild(makeBtn(String(i + 1), i, false, i === tablePage));
+  pag.appendChild(makeBtn('Next', tablePage + 1, tablePage >= totalPages - 1, false));
+}
+
+// Event listeners
+document.getElementById('yearMin').addEventListener('input', function() {
+  if (+this.value > +document.getElementById('yearMax').value) document.getElementById('yearMax').value = this.value;
+  applyFilters();
+});
+document.getElementById('yearMax').addEventListener('input', function() {
+  if (+this.value < +document.getElementById('yearMin').value) document.getElementById('yearMin').value = this.value;
+  applyFilters();
+});
+document.getElementById('filterOrg').addEventListener('change', applyFilters);
+document.getElementById('filterType').addEventListener('change', applyFilters);
+document.getElementById('filterKeyword').addEventListener('input', function() { activeKeyword = null; applyFilters(); });
+document.getElementById('tableSearch').addEventListener('input', () => { tablePage = 0; renderTable(); });
+document.getElementById('resetFilters').addEventListener('click', () => {
+  document.getElementById('yearMin').value = 1973;
+  document.getElementById('yearMax').value = 2022;
+  document.getElementById('filterOrg').value = 'all';
+  document.getElementById('filterType').value = 'all';
+  document.getElementById('filterKeyword').value = '';
+  document.getElementById('tableSearch').value = '';
+  activeKeyword = null;
+  applyFilters();
+});
+document.querySelectorAll('.data-table thead th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (tableSort.col === col) tableSort.dir = tableSort.dir === 'asc' ? 'desc' : 'asc';
+    else { tableSort.col = col; tableSort.dir = 'asc'; }
+    document.querySelectorAll('.data-table thead th').forEach(t => t.classList.remove('sorted-asc','sorted-desc'));
+    th.classList.add(tableSort.dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
+    renderTable();
+  });
+});
+let resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderAll, 200); });
+loadData();
+</script>
+</body>
+</html>

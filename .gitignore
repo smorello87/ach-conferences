@@ -1,0 +1,10 @@
+.env
+generated_keywords_cache.json
+dh_conferences_works.csv
+dh_conferences_works.csv.zip
+dh_conferences_full.zip
+dh_full/
+__pycache__/
+*.pyc
+.playwright-mcp/
+*.png
