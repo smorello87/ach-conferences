@@ -205,6 +205,11 @@ for wid, w in works.items():
         "countries": inst_countries,
     })
 
+# Merge ConfTool records (ACH 2023, 2024)
+from ingest_conftool import load_conftool_records
+conftool_records = load_conftool_records()
+records.extend(conftool_records)
+
 records.sort(key=lambda r: (r["year"], r["title"].lower()))
 
 # Build summary metadata

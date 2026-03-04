@@ -331,7 +331,7 @@ body::before {
   <div class="header-inner">
     <div class="header-label">Association for Computers &amp; the Humanities</div>
     <h1 class="header-title">Five Decades of <em>Digital Humanities</em></h1>
-    <p class="header-subtitle">Exploring 2,700+ presentations across 26 ACH conferences, from 1973 to 2022.</p>
+    <p class="header-subtitle" id="headerSubtitle">Exploring 2,700+ presentations across 26 ACH conferences, from 1973 to 2022.</p>
   </div>
 </header>
 
@@ -515,6 +515,20 @@ function hideTooltip() { tooltip.classList.remove('visible'); }
 async function loadData() {
   const resp = await fetch('ach_data.json');
   DATA = await resp.json();
+  // Set year slider range from data
+  const minYear = DATA.meta.year_range[0];
+  const maxYear = DATA.meta.year_range[1];
+  document.getElementById('yearMin').min = minYear;
+  document.getElementById('yearMin').max = maxYear;
+  document.getElementById('yearMin').value = minYear;
+  document.getElementById('yearMax').min = minYear;
+  document.getElementById('yearMax').max = maxYear;
+  document.getElementById('yearMax').value = maxYear;
+  document.getElementById('yearDisplay').textContent = minYear + ' \u2014 ' + maxYear;
+  const nonParent = DATA.records.filter(r => !r.is_parent).length;
+  const numConfs = DATA.meta.years.length;
+  document.getElementById('headerSubtitle').textContent = 'Exploring ' + nonParent.toLocaleString() + '+ presentations across ' + numConfs + ' ACH conferences, from ' + minYear + ' to ' + maxYear + '.';
+
   const types = new Set();
   DATA.records.forEach(r => { if (r.type) types.add(r.type); });
   const sel = document.getElementById('filterType');
@@ -565,7 +579,9 @@ function applyFilters() {
 }
 
 function updateTrackFill(min, max) {
-  const pct = v => ((v - 1973) / (2022 - 1973)) * 100;
+  const rangeMin = +document.getElementById('yearMin').min;
+  const rangeMax = +document.getElementById('yearMax').max;
+  const pct = v => ((v - rangeMin) / (rangeMax - rangeMin)) * 100;
   const fill = document.getElementById('trackFill');
   fill.style.left = pct(min) + '%';
   fill.style.width = (pct(max) - pct(min)) + '%';
@@ -887,8 +903,8 @@ document.getElementById('filterType').addEventListener('change', applyFilters);
 document.getElementById('filterKeyword').addEventListener('input', function() { activeKeyword = null; applyFilters(); });
 document.getElementById('tableSearch').addEventListener('input', () => { tablePage = 0; renderTable(); });
 document.getElementById('resetFilters').addEventListener('click', () => {
-  document.getElementById('yearMin').value = 1973;
-  document.getElementById('yearMax').value = 2022;
+  document.getElementById('yearMin').value = document.getElementById('yearMin').min;
+  document.getElementById('yearMax').value = document.getElementById('yearMax').max;
   document.getElementById('filterOrg').value = 'all';
   document.getElementById('filterType').value = 'all';
   document.getElementById('filterKeyword').value = '';
