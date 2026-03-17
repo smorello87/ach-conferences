@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ACH Conferences — Five Decades of Digital Humanities</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231B2838'/><text x='16' y='23' font-family='serif' font-size='20' font-weight='bold' fill='%23C4862B' text-anchor='middle'>A</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -145,7 +146,7 @@ body::before {
   color: var(--amber); background: none;
   border: 1px solid var(--amber); border-radius: 4px;
   padding: 0.4rem 1rem; cursor: pointer;
-  transition: all 0.2s; align-self: flex-end;
+  transition: all 0.2s; white-space: nowrap;
 }
 .filter-reset:hover { background: var(--amber); color: white; }
 .active-count {
@@ -316,6 +317,55 @@ body::before {
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-in { animation: fadeUp 0.5s ease-out forwards; opacity: 0; }
+
+.export-btn {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.8rem; font-weight: 600;
+  color: var(--teal); background: none;
+  border: 1px solid var(--teal); border-radius: 4px;
+  padding: 0.4rem 0.8rem; cursor: pointer;
+  transition: all 0.2s; margin-left: auto;
+}
+.export-btn:hover { background: var(--teal); color: white; }
+
+.share-btn {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.8rem; font-weight: 600;
+  color: var(--navy); background: none;
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 0.4rem 0.8rem; cursor: pointer;
+  transition: all 0.2s;
+}
+.share-btn:hover { border-color: var(--navy); background: var(--navy); color: white; }
+.share-btn.copied { border-color: var(--teal); color: var(--teal); }
+
+@media (max-width: 768px) {
+  .site-header { padding: 2rem 1rem 1.5rem; }
+  .header-title { font-size: 1.8rem; }
+  .filter-bar { padding: 1rem; }
+  .filter-inner { gap: 1rem; }
+  .year-range-container { min-width: 100%; max-width: 100%; }
+  .filter-group select, .filter-group input[type="text"] { font-size: 0.8rem; }
+  .stats-row { padding: 0 1rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; }
+  .stat-card { padding: 0.75rem 1rem; }
+  .stat-value { font-size: 1.6rem; }
+  .main-content { padding: 0 1rem 3rem; }
+  .chart-row { grid-template-columns: 1fr; }
+  .section-header { flex-wrap: wrap; }
+  .section-note { margin-left: 0; }
+  .table-controls { flex-wrap: wrap; }
+  .table-search { width: 100%; }
+  .data-table { font-size: 0.75rem; }
+  .data-table thead th { font-size: 0.6rem; padding: 0.4rem; }
+  .data-table td { padding: 0.4rem; }
+  .td-title { max-width: 200px; }
+  .td-panel, .td-inst { max-width: 150px; }
+}
+@media (max-width: 480px) {
+  .header-title { font-size: 1.5rem; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .filter-inner { gap: 0.75rem; }
+}
 </style>
 </head>
 <body>
@@ -365,7 +415,10 @@ body::before {
       <div class="filter-label">Keyword Filter</div>
       <input type="text" id="filterKeyword" placeholder="e.g. text encoding">
     </div>
-    <button class="filter-reset" id="resetFilters">Reset All</button>
+    <div style="display:flex; align-items:flex-end; gap:0.5rem; margin-left:auto;">
+      <button class="filter-reset" id="resetFilters">Reset All</button>
+      <button class="share-btn" id="shareBtn" title="Copy link with current filters">Share View</button>
+    </div>
     <div class="active-count" id="activeCount"></div>
   </div>
 </div>
@@ -444,15 +497,25 @@ body::before {
     </div>
   </div>
 
-  <div class="section animate-in" style="animation-delay:0.6s">
+  <div class="section animate-in" style="animation-delay:0.55s">
     <div class="section-header">
       <span class="section-number">06</span>
+      <span class="section-title">Presentation Types Over Time</span>
+      <span class="section-note">stacked by type per conference year</span>
+    </div>
+    <div class="chart-card"><div id="typeChart"></div></div>
+  </div>
+
+  <div class="section animate-in" style="animation-delay:0.6s">
+    <div class="section-header">
+      <span class="section-number">07</span>
       <span class="section-title">All Presentations</span>
     </div>
     <div class="chart-card">
       <div class="table-controls">
         <input type="text" class="table-search" id="tableSearch" placeholder="Search titles, panels, institutions...">
         <div class="table-count" id="tableCount"></div>
+        <button class="export-btn" id="exportBtn">Export CSV</button>
       </div>
       <div style="overflow-x:auto">
         <table class="data-table" id="dataTable">
@@ -547,6 +610,7 @@ async function loadData() {
     o.value = t; o.textContent = t;
     sel.appendChild(o);
   });
+  loadHash();
   applyFilters();
   document.getElementById('loading').classList.add('hidden');
 }
@@ -585,6 +649,7 @@ function applyFilters() {
   document.getElementById('activeCount').textContent = filtered.length + ' of ' + DATA.records.filter(r => !r.is_parent).length + ' presentations';
 
   tablePage = 0;
+  updateHash();
   renderAll();
 }
 
@@ -603,6 +668,7 @@ function renderAll() {
   renderInstitutions();
   renderMap();
   renderTrends();
+  renderTypeBreakdown();
   renderTable();
 }
 
@@ -899,6 +965,114 @@ function renderTable() {
   pag.appendChild(makeBtn('Next', tablePage + 1, tablePage >= totalPages - 1, false));
 }
 
+function renderTypeBreakdown() {
+  const container = document.getElementById('typeChart');
+  container.textContent = '';
+  const margin = {top: 20, right: 160, bottom: 40, left: 50};
+  const width = container.clientWidth - margin.left - margin.right;
+  const height = 280 - margin.top - margin.bottom;
+
+  const yMin = +document.getElementById('yearMin').value;
+  const yMax = +document.getElementById('yearMax').value;
+  const years = DATA.meta.years.filter(y => y >= yMin && y <= yMax);
+
+  const typeSet = new Set();
+  filtered.forEach(r => { if (r.type) typeSet.add(r.type); });
+  const types = [...typeSet].sort();
+
+  const byYearType = {};
+  years.forEach(y => { byYearType[y] = {}; types.forEach(t => byYearType[y][t] = 0); });
+  filtered.forEach(r => { if (byYearType[r.year] && r.type) byYearType[r.year][r.type]++; });
+
+  const stackData = years.map(y => { const d = {year: y}; types.forEach(t => d[t] = byYearType[y][t]); return d; });
+  const stack = d3.stack().keys(types)(stackData);
+
+  const svg = d3.select(container).append('svg')
+    .attr('viewBox', '0 0 ' + (width + margin.left + margin.right) + ' ' + (height + margin.top + margin.bottom))
+    .append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  const x = d3.scaleBand().domain(years).range([0, width]).padding(0.3);
+  const y = d3.scaleLinear().domain([0, d3.max(stack, s => d3.max(s, d => d[1])) || 1]).nice().range([height, 0]);
+  const color = d3.scaleOrdinal().domain(types).range(PALETTE.concat(['#9B6B9B','#6B9B8E','#8E8E6B','#6B6B9B']));
+
+  svg.append('g').attr('class', 'axis').attr('transform', 'translate(0,' + height + ')')
+    .call(d3.axisBottom(x).tickValues(years.filter((_, i) => years.length <= 15 || i % 2 === 0)));
+  svg.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(5));
+
+  svg.selectAll('g.layer').data(stack).join('g').attr('class', 'layer')
+    .attr('fill', d => color(d.key))
+    .selectAll('rect').data(d => d).join('rect')
+    .attr('x', d => x(d.data.year)).attr('y', d => y(d[1]))
+    .attr('width', x.bandwidth()).attr('height', d => y(d[0]) - y(d[1]))
+    .attr('rx', 1)
+    .on('mousemove', function(evt, d) {
+      const key = d3.select(this.parentNode).datum().key;
+      showTooltip(evt, d.data.year + ' \u2014 ' + key, (d[1] - d[0]) + ' presentations');
+    })
+    .on('mouseleave', hideTooltip);
+
+  const legend = svg.append('g').attr('transform', 'translate(' + (width + 16) + ',0)');
+  types.forEach((t, i) => {
+    const g = legend.append('g').attr('transform', 'translate(0,' + (i * 16) + ')');
+    g.append('rect').attr('width', 10).attr('height', 10).attr('rx', 2).attr('fill', color(t));
+    g.append('text').attr('x', 14).attr('y', 9).style('font-size', '9px').style('fill', COLORS.textMuted).text(t.length > 20 ? t.slice(0,18) + '\u2026' : t);
+  });
+}
+
+function exportCSV() {
+  const search = document.getElementById('tableSearch').value.toLowerCase();
+  let rows = filtered;
+  if (search) {
+    rows = rows.filter(r =>
+      r.title.toLowerCase().includes(search) ||
+      r.panel.toLowerCase().includes(search) ||
+      r.institutions.some(i => i.toLowerCase().includes(search)) ||
+      r.keywords.some(k => k.toLowerCase().includes(search))
+    );
+  }
+  const escape = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const header = ['Year','Conference','Title','Panel','Type','Institutions','Keywords','Countries'];
+  const csvRows = [header.join(',')];
+  rows.forEach(r => {
+    csvRows.push([
+      r.year, escape(r.conference), escape(r.title), escape(r.panel), escape(r.type),
+      escape(r.institutions.join('; ')), escape(r.keywords.join('; ')), escape(r.countries.join('; '))
+    ].join(','));
+  });
+  const blob = new Blob([csvRows.join('\n')], {type: 'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'ach_conferences_export.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function updateHash() {
+  const yMin = document.getElementById('yearMin').value;
+  const yMax = document.getElementById('yearMax').value;
+  const org = document.getElementById('filterOrg').value;
+  const type = document.getElementById('filterType').value;
+  const kw = document.getElementById('filterKeyword').value;
+  const params = new URLSearchParams();
+  if (yMin !== document.getElementById('yearMin').min) params.set('ymin', yMin);
+  if (yMax !== document.getElementById('yearMax').max) params.set('ymax', yMax);
+  if (org !== 'all') params.set('org', org);
+  if (type !== 'all') params.set('type', type);
+  if (kw) params.set('kw', kw);
+  const hash = params.toString();
+  history.replaceState(null, '', hash ? '#' + hash : location.pathname + location.search);
+}
+
+function loadHash() {
+  if (!location.hash) return;
+  const params = new URLSearchParams(location.hash.slice(1));
+  if (params.has('ymin')) document.getElementById('yearMin').value = params.get('ymin');
+  if (params.has('ymax')) document.getElementById('yearMax').value = params.get('ymax');
+  if (params.has('org')) document.getElementById('filterOrg').value = params.get('org');
+  if (params.has('type')) document.getElementById('filterType').value = params.get('type');
+  if (params.has('kw')) document.getElementById('filterKeyword').value = params.get('kw');
+}
+
 // Event listeners
 document.getElementById('yearMin').addEventListener('input', function() {
   if (+this.value > +document.getElementById('yearMax').value) document.getElementById('yearMax').value = this.value;
@@ -932,6 +1106,16 @@ document.querySelectorAll('.data-table thead th').forEach(th => {
     renderTable();
   });
 });
+document.getElementById('exportBtn').addEventListener('click', exportCSV);
+document.getElementById('shareBtn').addEventListener('click', function() {
+  updateHash();
+  navigator.clipboard.writeText(location.href).then(() => {
+    this.textContent = 'Copied!';
+    this.classList.add('copied');
+    setTimeout(() => { this.textContent = 'Share View'; this.classList.remove('copied'); }, 2000);
+  });
+});
+window.addEventListener('hashchange', () => { loadHash(); applyFilters(); });
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderAll, 200); });
 loadData();
