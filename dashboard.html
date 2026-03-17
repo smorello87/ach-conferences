@@ -231,7 +231,9 @@ body.chart-expanded::before { display: none; }
 @media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
 
 .chart-card svg { width: 100%; display: block; }
-.chart-card.expanded svg { height: calc(100vh - 8rem); }
+.chart-card.expanded { display: flex; flex-direction: column; }
+.chart-card.expanded > div { flex: 1; min-height: 0; }
+.chart-card.expanded svg { width: 100%; height: 100%; }
 .axis text { font-family: 'Source Sans 3', sans-serif; font-size: 11px; fill: var(--text-muted); }
 .axis line, .axis path { stroke: var(--border); }
 .bar-label { font-family: 'Source Sans 3', sans-serif; font-size: 11px; fill: var(--text); }
@@ -1178,8 +1180,6 @@ function collapseCard() {
   document.body.classList.remove('chart-expanded');
   expandedOrigParent = null;
   expandedOrigNext = null;
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(renderAll, 100);
 }
 
 document.querySelectorAll('.chart-card').forEach(card => {
@@ -1203,8 +1203,6 @@ document.querySelectorAll('.chart-card').forEach(card => {
       document.body.classList.add('chart-expanded');
       btn.textContent = '\u2715';
       btn.title = 'Close';
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(renderAll, 100);
     }
   });
 });
