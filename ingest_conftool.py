@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse ACH 2023/2024 ConfTool exports into records matching build_data.py schema."""
+"""Parse ACH 2023/2024 ConfTool exports and ACH 2025 web program into records matching build_data.py schema."""
 
 import json, os, re, sys, time
 import xml.etree.ElementTree as ET
@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_2023 = os.path.join(SCRIPT_DIR, "ACH2023Conference_all_contributions_data_papers_2024-01-12_19-42-17.xlsx")
 FILE_2024 = os.path.join(SCRIPT_DIR, "ACH2024Conference_papers_2024-11-15_12-57-31.xls")
+FILE_2025 = os.path.join(SCRIPT_DIR, "ach2025_program.json")
 KEYWORD_CACHE = os.path.join(SCRIPT_DIR, "generated_keywords_cache.json")
 
 # ---- Country normalization ----
@@ -370,6 +371,36 @@ def load_2024_rows():
     return records
 
 
+# ---- 2025 web program parser ----
+def load_2025_rows():
+    """Parse the 2025 program JSON (scraped from ach2025.ach.org) into structured rows."""
+    with open(FILE_2025, "r") as f:
+        entries = json.load(f)
+
+    records = []
+    for i, entry in enumerate(entries):
+        title = entry.get("title", "").strip()
+        if not title:
+            continue
+
+        records.append({
+            "id": f"web2025-{i+1}",
+            "year": 2025,
+            "conference": "2025 - Virtual",
+            "organizers": "ACH",
+            "title": title,
+            "panel": entry.get("panel", ""),
+            "type": entry.get("type", "paper"),
+            "is_parent": False,
+            "keywords": [],
+            "institutions": [],
+            "countries": [],
+            "_raw_keywords": [],
+        })
+
+    return records
+
+
 # ---- Keyword generation via OpenAI ----
 def generate_keywords(records, kw_cache):
     """Generate keywords for ConfTool records using GPT-5.2, incorporating author keywords."""
@@ -445,14 +476,17 @@ def load_conftool_records():
                     k, v = line.split("=", 1)
                     os.environ.setdefault(k.strip(), v.strip())
 
-    print("\nLoading ConfTool exports...")
+    print("\nLoading ConfTool exports and web program data...")
     records_2023 = load_2023_rows()
     print(f"  2023 (Houston): {len(records_2023)} accepted records")
 
     records_2024 = load_2024_rows()
     print(f"  2024 (Fairfax): {len(records_2024)} accepted records")
 
-    all_records = records_2023 + records_2024
+    records_2025 = load_2025_rows()
+    print(f"  2025 (Virtual): {len(records_2025)} program entries")
+
+    all_records = records_2023 + records_2024 + records_2025
 
     # Load keyword cache
     kw_cache = {}

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Data archive and interactive dashboard for ACH (Association for Computers and the Humanities) conference presentations (1973–2024, ~2,980 records). Deployed via GitHub Pages.
+Data archive and interactive dashboard for ACH (Association for Computers and the Humanities) conference presentations (1973–2025, ~3,070 records). Deployed via GitHub Pages.
 
 Live dashboard: https://smorello87.github.io/ach-conferences/dashboard.html
 
@@ -76,7 +76,7 @@ Each record in `ach_data.json`:
 The ACH/ICCH conference series (series ID `2`) spans:
 - **1973–1987**: ACH solo (US locations)
 - **1989–2006**: Joint ACH/ALLC (US/Europe/Canada)
-- **2019–2024**: ACH renewed biennial (Pittsburgh, Virtual, Houston, Fairfax)
+- **2019–2025**: ACH renewed biennial (Pittsburgh, Virtual, Houston, Fairfax, Virtual)
 
 Coverage gap: 2021 (indexed in UVA database, 0 works entered).
 
@@ -93,5 +93,6 @@ Coverage gap: 2021 (indexed in UVA database, 0 works entered).
   - Full relational dump: https://dh-abstracts.library.virginia.edu/downloads/public
   - Simple CSV: https://dh-abstracts.library.virginia.edu/downloads/dh_conferences_works.csv
 - **ConfTool exports** (covers ACH 2023 Houston, 2024 Fairfax): exported XLSX/XLS files in repo, parsed by `ingest_conftool.py`
+- **ACH 2025 web program** (Virtual): scraped from https://ach2025.ach.org/en/program/, stored as `ach2025_program.json`, parsed by `ingest_conftool.py`. No institutional affiliations available.
 
 Data source attribution is displayed in the dashboard footer.
