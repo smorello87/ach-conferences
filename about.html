@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About — ACH Conferences Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ivory: #F5F0E8;
+  --cream: #FFFDF7;
+  --navy: #1B2838;
+  --navy-light: #2A3F54;
+  --amber: #C4862B;
+  --amber-light: #E8A840;
+  --teal: #3D6B6B;
+  --teal-light: #4A8585;
+  --rust: #A0522D;
+  --text: #2C2C2C;
+  --text-muted: #6B6560;
+  --border: #D8D0C4;
+  --card-shadow: 0 2px 12px rgba(27,40,56,0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  background: var(--ivory);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.site-header {
+  background: var(--navy);
+  color: var(--cream);
+  padding: 3rem 2rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.site-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--amber), var(--teal), var(--amber));
+}
+.header-inner { max-width: 900px; margin: 0 auto; }
+.header-label {
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600; font-size: 0.75rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--amber); margin-bottom: 0.5rem;
+}
+.header-label a { color: var(--amber); text-decoration: none; }
+.header-label a:hover { text-decoration: underline; }
+.header-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1; margin-bottom: 0.5rem;
+}
+.header-title em { font-style: italic; font-weight: 400; color: var(--amber-light); }
+
+.content {
+  max-width: 900px; margin: 0 auto;
+  padding: 3rem 2rem 4rem;
+}
+
+.content h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 700;
+  color: var(--navy);
+  margin: 2.5rem 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--navy);
+}
+.content h2:first-child { margin-top: 0; }
+
+.content p {
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+  max-width: 70ch;
+}
+
+.content a {
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.content a:hover { color: var(--amber); }
+
+.content ul {
+  margin: 0.5rem 0 1rem 1.5rem;
+  font-size: 1.05rem;
+}
+.content li { margin-bottom: 0.4rem; }
+
+.conference-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.9rem;
+}
+.conference-table th {
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0.5rem 1rem;
+  border-bottom: 2px solid var(--navy);
+}
+.conference-table td {
+  padding: 0.4rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.conference-table tr:hover td { background: rgba(196,134,43,0.05); }
+
+.back-link {
+  display: inline-block;
+  margin-top: 2rem;
+  font-weight: 600;
+  color: var(--amber);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.back-link:hover { text-decoration: underline; }
+
+.site-footer {
+  background: var(--navy); color: rgba(255,253,247,0.5);
+  padding: 2rem; text-align: center; font-size: 0.8rem;
+}
+.site-footer a { color: var(--amber-light); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-label"><a href="dashboard.html">ACH Conferences Archive</a></div>
+    <h1 class="header-title">About <em>This Project</em></h1>
+  </div>
+</header>
+
+<div class="content">
+
+  <h2>What Is This?</h2>
+  <p>
+    This is an interactive data archive of presentations delivered at conferences organized or co-organized by the
+    <a href="https://ach.org/" target="_blank">Association for Computers and the Humanities</a> (ACH) from 1973 to 2024.
+    It brings together over 2,700 records spanning five decades of digital humanities scholarship into a single
+    searchable, filterable dashboard.
+  </p>
+  <p>
+    The archive makes it possible to trace the evolution of the field across time&mdash;from early work in concordance
+    building, computational linguistics, and literary stylistics to contemporary research in digital pedagogy, cultural
+    analytics, and critical DH.
+  </p>
+
+  <h2>Conference History</h2>
+  <p>
+    The ACH conference series has gone through several phases:
+  </p>
+  <ul>
+    <li><strong>1973&ndash;1987:</strong> ACH solo conferences at U.S. universities (also known as ICCH, the International Conference on Computers and the Humanities).</li>
+    <li><strong>1989&ndash;2006:</strong> Joint annual conferences with ALLC (Association for Literary and Linguistic Computing), rotating between North America and Europe.</li>
+    <li><strong>2019&ndash;2024:</strong> ACH renewed its own biennial conference, held in Pittsburgh (2019), virtually (2022), Houston (2023), and Fairfax (2024).</li>
+  </ul>
+  <p>
+    The 2021 conference was held virtually in partnership with the University of Houston, but its program has not yet been
+    indexed in any publicly accessible database.
+  </p>
+
+  <h2>Data Sources</h2>
+  <p>
+    Conference records from 1973 through 2022 are drawn from the
+    <a href="https://dh-abstracts.library.virginia.edu/" target="_blank">Index of Digital Humanities Conferences</a>,
+    a relational database maintained by the University of Virginia Library. The full dataset is available as a
+    <a href="https://dh-abstracts.library.virginia.edu/downloads/public" target="_blank">relational dump</a> or a
+    <a href="https://dh-abstracts.library.virginia.edu/downloads/dh_conferences_works.csv" target="_blank">simple CSV</a>.
+  </p>
+  <p>
+    Records for ACH 2023 (Houston) and ACH 2024 (Fairfax) were parsed from
+    <a href="https://www.conftool.net/" target="_blank">ConfTool</a> conference management exports.
+  </p>
+  <p>
+    Where original keyword metadata was missing, topical keywords were generated using OpenAI GPT-5.2 based on
+    presentation titles and, when available, author-supplied keywords. Generated keywords are cached to ensure
+    consistency across builds.
+  </p>
+
+  <h2>What's in Each Record</h2>
+  <p>Each presentation record includes:</p>
+  <ul>
+    <li>Year and conference name</li>
+    <li>Presentation title and panel/session title (where applicable)</li>
+    <li>Presentation type (paper, poster, panel, workshop, etc.)</li>
+    <li>Affiliated institutions and countries</li>
+    <li>Topical keywords</li>
+  </ul>
+  <p>Author names are deliberately excluded from the public dataset.</p>
+
+  <h2>How It's Built</h2>
+  <p>
+    The data pipeline is written in Python. It joins 22 relational CSV files from the UVA database, filters to the
+    ACH conference series, generates keywords for uncached works, and merges in the ConfTool records. The output is a
+    single JSON file that powers the dashboard.
+  </p>
+  <p>
+    The dashboard itself is a single-file HTML application using
+    <a href="https://d3js.org/" target="_blank">D3.js</a> v7 for all charts and
+    <a href="https://github.com/topojson/topojson" target="_blank">TopoJSON</a> for the geographic visualization.
+    It is deployed via GitHub Pages.
+  </p>
+  <p>
+    Source code is available on <a href="https://github.com/smorello87/ach-conferences" target="_blank">GitHub</a>.
+  </p>
+
+  <a class="back-link" href="dashboard.html">&larr; Back to the dashboard</a>
+
+</div>
+
+<footer class="site-footer">
+  Developed by <a href="https://www.stefanomorello.com/" target="_blank">Stefano Morello</a>
+</footer>
+
+</body>
+</html>
