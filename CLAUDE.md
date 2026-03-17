@@ -76,7 +76,7 @@ Each record in `ach_data.json`:
 The ACH/ICCH conference series (series ID `2`) spans:
 - **1973–1987**: ACH solo (US locations)
 - **1989–2006**: Joint ACH/ALLC (US/Europe/Canada)
-- **2019–2025**: ACH renewed biennial (Pittsburgh, Virtual, Houston, Fairfax, Virtual)
+- **2019–2025**: ACH renewed (Pittsburgh, Virtual, Houston, Fairfax, Virtual)
 
 Coverage gap: 2021 (indexed in UVA database, 0 works entered).
 
