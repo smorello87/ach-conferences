@@ -489,7 +489,7 @@ body.chart-expanded::before { display: none; }
         <div class="section-header">
           <span class="section-number">02</span>
           <span class="section-title">Top Keywords</span>
-          <span class="section-note">click to filter</span>
+          <span class="section-note">across all filtered presentations</span>
         </div>
         <div class="chart-card"><div id="keywordsChart"></div></div>
       </div>
@@ -764,16 +764,14 @@ function renderKeywords() {
   svg.selectAll('.bar').data(data).join('rect')
     .attr('x', 0).attr('y', d => y(d.keyword))
     .attr('width', d => x(d.count)).attr('height', y.bandwidth())
-    .attr('fill', d => d.keyword === activeKeyword ? COLORS.amber : COLORS.teal)
-    .attr('rx', 3).style('cursor', 'pointer')
-    .on('click', (_, d) => { activeKeyword = activeKeyword === d.keyword ? null : d.keyword; document.getElementById('filterKeyword').value = activeKeyword || ''; applyFilters(); })
+    .attr('fill', COLORS.teal)
+    .attr('rx', 3)
     .on('mousemove', (evt, d) => showTooltip(evt, d.keyword, d.count + ' presentations'))
     .on('mouseleave', hideTooltip);
   svg.selectAll('.label').data(data).join('text').attr('class', 'bar-label')
     .attr('x', -8).attr('y', d => y(d.keyword) + y.bandwidth()/2)
     .attr('text-anchor', 'end').attr('dy', '0.35em').text(d => d.keyword)
-    .style('font-size', '11px').style('cursor', 'pointer')
-    .on('click', (_, d) => { activeKeyword = activeKeyword === d.keyword ? null : d.keyword; document.getElementById('filterKeyword').value = activeKeyword || ''; applyFilters(); });
+    .style('font-size', '11px');
   svg.selectAll('.count').data(data).join('text').attr('class', 'bar-label')
     .attr('x', d => x(d.count) + 6).attr('y', d => y(d.keyword) + y.bandwidth()/2)
     .attr('dy', '0.35em').text(d => d.count)
