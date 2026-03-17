@@ -231,6 +231,7 @@ body.chart-expanded::before { display: none; }
 @media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
 
 .chart-card svg { width: 100%; display: block; }
+.chart-card.expanded svg { height: calc(100vh - 8rem); }
 .axis text { font-family: 'Source Sans 3', sans-serif; font-size: 11px; fill: var(--text-muted); }
 .axis line, .axis path { stroke: var(--border); }
 .bar-label { font-family: 'Source Sans 3', sans-serif; font-size: 11px; fill: var(--text); }
