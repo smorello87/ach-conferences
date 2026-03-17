@@ -687,6 +687,15 @@ function updateTrackFill(min, max) {
   fill.style.width = (pct(max) - pct(min)) + '%';
 }
 
+const CHART_RENDERERS = {
+  timelineChart: renderTimeline,
+  keywordsChart: renderKeywords,
+  institutionsChart: renderInstitutions,
+  mapChart: renderMap,
+  trendsChart: renderTrends,
+  typeChart: renderTypeBreakdown,
+};
+
 function renderAll() {
   renderTimeline();
   renderKeywords();
@@ -695,6 +704,13 @@ function renderAll() {
   renderTrends();
   renderTypeBreakdown();
   renderTable();
+}
+
+function renderExpandedChart(card) {
+  // Find which chart container is inside this card and re-render just that one
+  for (const [id, fn] of Object.entries(CHART_RENDERERS)) {
+    if (card.querySelector('#' + id)) { fn(); return; }
+  }
 }
 
 function renderTimeline() {
@@ -731,8 +747,9 @@ function renderTimeline() {
 function renderKeywords() {
   const container = document.getElementById('keywordsChart');
   container.textContent = '';
-  const margin = {top: 10, right: 60, bottom: 10, left: 160};
-  const barH = 20, gap = 4, N = 20;
+  const isExpanded = !!container.closest('.chart-card.expanded');
+  const margin = {top: 10, right: 60, bottom: 10, left: isExpanded ? 200 : 160};
+  const barH = isExpanded ? 28 : 20, gap = isExpanded ? 6 : 4, N = isExpanded ? 30 : 20;
   const kwCount = {};
   filtered.forEach(r => r.keywords.forEach(k => { kwCount[k] = (kwCount[k]||0) + 1; }));
   const data = Object.entries(kwCount).sort((a,b) => b[1]-a[1]).slice(0, N).map(([k,v]) => ({keyword:k, count:v}));
@@ -766,8 +783,9 @@ function renderKeywords() {
 function renderInstitutions() {
   const container = document.getElementById('institutionsChart');
   container.textContent = '';
-  const margin = {top: 10, right: 60, bottom: 10, left: 200};
-  const barH = 20, gap = 4, N = 20;
+  const isExpanded = !!container.closest('.chart-card.expanded');
+  const margin = {top: 10, right: 60, bottom: 10, left: isExpanded ? 260 : 200};
+  const barH = isExpanded ? 28 : 20, gap = isExpanded ? 6 : 4, N = isExpanded ? 30 : 20;
   const instCount = {};
   filtered.forEach(r => r.institutions.forEach(i => { instCount[i] = (instCount[i]||0) + 1; }));
   const data = Object.entries(instCount).sort((a,b) => b[1]-a[1]).slice(0, N).map(([k,v]) => ({inst:k, count:v}));
@@ -800,7 +818,7 @@ async function renderMap() {
   const container = document.getElementById('mapChart');
   container.textContent = '';
   const width = container.clientWidth;
-  const height = 340;
+  const height = chartHeight(container, 340);
   const svg = d3.select(container).append('svg').attr('viewBox', '0 0 ' + width + ' ' + height);
 
   const countryCount = {};
@@ -1188,6 +1206,8 @@ function collapseCard() {
 }
 
 document.querySelectorAll('.chart-card').forEach(card => {
+  // Skip expand button on the table card (no chart to expand)
+  if (card.querySelector('.data-table')) return;
   const btn = document.createElement('button');
   btn.className = 'expand-btn';
   btn.title = 'Expand';
@@ -1209,7 +1229,7 @@ document.querySelectorAll('.chart-card').forEach(card => {
       btn.textContent = '\u2715';
       btn.title = 'Close';
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(renderAll, 50);
+      resizeTimer = setTimeout(() => renderExpandedChart(card), 50);
     }
   });
 });
