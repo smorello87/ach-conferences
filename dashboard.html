@@ -231,9 +231,6 @@ body.chart-expanded::before { display: none; }
 @media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
 
 .chart-card svg { width: 100%; display: block; }
-.chart-card.expanded { display: flex; flex-direction: column; }
-.chart-card.expanded > div { flex: 1; min-height: 0; }
-.chart-card.expanded svg { width: 100%; height: 100%; }
 .axis text { font-family: 'Source Sans 3', sans-serif; font-size: 11px; fill: var(--text-muted); }
 .axis line, .axis path { stroke: var(--border); }
 .bar-label { font-family: 'Source Sans 3', sans-serif; font-size: 11px; fill: var(--text); }
@@ -587,6 +584,12 @@ let tablePage = 0, tableSort = { col: 'year', dir: 'asc' };
 const PAGE_SIZE = 50;
 const tooltip = document.getElementById('tooltip');
 
+function chartHeight(container, defaultH) {
+  const card = container.closest('.chart-card');
+  if (card && card.classList.contains('expanded')) return card.clientHeight - 120;
+  return defaultH;
+}
+
 function showTooltip(evt, titleText, valueText) {
   tooltip.textContent = '';
   const t = document.createElement('div');
@@ -699,7 +702,7 @@ function renderTimeline() {
   container.textContent = '';
   const margin = {top: 20, right: 30, bottom: 40, left: 50};
   const width = container.clientWidth - margin.left - margin.right;
-  const height = 220 - margin.top - margin.bottom;
+  const height = chartHeight(container, 220) - margin.top - margin.bottom;
   const svg = d3.select(container).append('svg')
     .attr('viewBox', '0 0 ' + (width + margin.left + margin.right) + ' ' + (height + margin.top + margin.bottom))
     .append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
@@ -874,7 +877,7 @@ function renderTrends() {
   container.textContent = '';
   const margin = {top: 20, right: 120, bottom: 40, left: 50};
   const width = container.clientWidth - margin.left - margin.right;
-  const height = 280 - margin.top - margin.bottom;
+  const height = chartHeight(container, 280) - margin.top - margin.bottom;
 
   const kwCount = {};
   filtered.forEach(r => r.keywords.forEach(k => { kwCount[k] = (kwCount[k]||0)+1; }));
@@ -1014,7 +1017,7 @@ function renderTypeBreakdown() {
   container.textContent = '';
   const margin = {top: 20, right: 160, bottom: 40, left: 50};
   const width = container.clientWidth - margin.left - margin.right;
-  const height = 280 - margin.top - margin.bottom;
+  const height = chartHeight(container, 280) - margin.top - margin.bottom;
 
   const yMin = +document.getElementById('yearMin').value;
   const yMax = +document.getElementById('yearMax').value;
@@ -1180,6 +1183,8 @@ function collapseCard() {
   document.body.classList.remove('chart-expanded');
   expandedOrigParent = null;
   expandedOrigNext = null;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderAll, 50);
 }
 
 document.querySelectorAll('.chart-card').forEach(card => {
@@ -1203,6 +1208,8 @@ document.querySelectorAll('.chart-card').forEach(card => {
       document.body.classList.add('chart-expanded');
       btn.textContent = '\u2715';
       btn.title = 'Close';
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(renderAll, 50);
     }
   });
 });
