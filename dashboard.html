@@ -218,6 +218,8 @@ body::before {
   border-radius: 12px; padding: 2rem;
   box-shadow: 0 8px 40px rgba(0,0,0,0.3);
   overflow-y: auto;
+  background: var(--cream);
+  isolation: isolate;
 }
 .chart-card.expanded .expand-btn { opacity: 1; }
 .chart-overlay {
@@ -225,6 +227,7 @@ body::before {
   z-index: 10000; display: none;
 }
 .chart-overlay.visible { display: block; }
+body.chart-expanded::before { display: none; }
 .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 @media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
 
@@ -1170,12 +1173,14 @@ document.querySelectorAll('.chart-card').forEach(card => {
     if (card.classList.contains('expanded')) {
       card.classList.remove('expanded');
       overlay.classList.remove('visible');
+      document.body.classList.remove('chart-expanded');
       btn.textContent = '\u26F6';
       btn.title = 'Expand';
     } else {
       document.querySelectorAll('.chart-card.expanded').forEach(c => c.classList.remove('expanded'));
       card.classList.add('expanded');
       overlay.classList.add('visible');
+      document.body.classList.add('chart-expanded');
       btn.textContent = '\u2715';
       btn.title = 'Close';
     }
@@ -1189,6 +1194,7 @@ overlay.addEventListener('click', () => {
     c.querySelector('.expand-btn').textContent = '\u26F6';
   });
   overlay.classList.remove('visible');
+  document.body.classList.remove('chart-expanded');
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(renderAll, 100);
 });
