@@ -200,7 +200,31 @@ body::before {
   background: var(--cream); border: 1px solid var(--border);
   border-radius: 8px; padding: 1.5rem;
   box-shadow: var(--card-shadow); overflow: hidden;
+  position: relative;
 }
+.expand-btn {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  width: 28px; height: 28px; border: 1px solid var(--border);
+  border-radius: 4px; background: var(--cream); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--text-muted); transition: all 0.2s;
+  z-index: 5; opacity: 0;
+}
+.chart-card:hover .expand-btn { opacity: 1; }
+.expand-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+.chart-card.expanded {
+  position: fixed; inset: 2rem; z-index: 500;
+  border-radius: 12px; padding: 2rem;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  overflow-y: auto;
+}
+.chart-card.expanded .expand-btn { opacity: 1; }
+.chart-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 499; display: none;
+}
+.chart-overlay.visible { display: block; }
 .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 @media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
 
@@ -376,6 +400,7 @@ body::before {
 </div>
 
 <div class="chart-tooltip" id="tooltip"></div>
+<div class="chart-overlay" id="chartOverlay"></div>
 
 <header class="site-header">
   <div class="header-inner">
@@ -869,21 +894,43 @@ function renderTrends() {
     .call(d3.axisBottom(x).tickValues(years.filter((_, i) => years.length <= 15 || i % 2 === 0)));
   svg.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(5));
 
+  // Collect label targets, then resolve overlaps
+  const labelData = [];
   series.forEach((s, i) => {
     svg.append('path').datum(s.values).attr('fill', 'none')
       .attr('stroke', color(s.keyword)).attr('stroke-width', 2.5).attr('d', line);
     const last = s.values[s.values.length - 1];
     if (last) {
-      svg.append('text').attr('x', x(last.year) + 8).attr('y', y(last.count))
-        .attr('dy', '0.35em').attr('fill', color(s.keyword))
-        .style('font-size', '10px').style('font-weight', '600')
-        .text(s.keyword.length > 18 ? s.keyword.slice(0,16) + '\u2026' : s.keyword);
+      labelData.push({ idx: i, keyword: s.keyword, targetY: y(last.count), y: y(last.count) });
     }
     svg.selectAll('.dot-' + i).data(s.values.filter(d => d.count > 0)).join('circle')
       .attr('cx', d => x(d.year)).attr('cy', d => y(d.count))
       .attr('r', 3).attr('fill', color(s.keyword))
       .on('mousemove', (evt, d) => showTooltip(evt, s.keyword, d.year + ': ' + d.count + ' presentations'))
       .on('mouseleave', hideTooltip);
+  });
+  // Resolve label overlaps with iterative relaxation
+  const minGap = 14;
+  labelData.sort((a, b) => a.y - b.y);
+  for (let pass = 0; pass < 10; pass++) {
+    for (let i = 1; i < labelData.length; i++) {
+      const gap = labelData[i].y - labelData[i-1].y;
+      if (gap < minGap) {
+        const shift = (minGap - gap) / 2;
+        labelData[i-1].y -= shift;
+        labelData[i].y += shift;
+      }
+    }
+    // Clamp
+    labelData.forEach(d => { d.y = Math.max(5, Math.min(height - 5, d.y)); });
+  }
+  // Draw labels
+  const lastYear = years[years.length - 1];
+  labelData.forEach(d => {
+    svg.append('text').attr('x', x(lastYear) + 8).attr('y', d.y)
+      .attr('dy', '0.35em').attr('fill', color(d.keyword))
+      .style('font-size', '10px').style('font-weight', '600')
+      .text(d.keyword.length > 18 ? d.keyword.slice(0,16) + '\u2026' : d.keyword);
   });
 }
 
@@ -1110,6 +1157,42 @@ document.getElementById('shareBtn').addEventListener('click', function() {
 window.addEventListener('hashchange', () => { loadHash(); applyFilters(); });
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderAll, 200); });
+// Expand/collapse chart cards
+const overlay = document.getElementById('chartOverlay');
+document.querySelectorAll('.chart-card').forEach(card => {
+  const btn = document.createElement('button');
+  btn.className = 'expand-btn';
+  btn.title = 'Expand';
+  btn.textContent = '\u26F6';
+  card.appendChild(btn);
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (card.classList.contains('expanded')) {
+      card.classList.remove('expanded');
+      overlay.classList.remove('visible');
+      btn.textContent = '\u26F6';
+      btn.title = 'Expand';
+    } else {
+      document.querySelectorAll('.chart-card.expanded').forEach(c => c.classList.remove('expanded'));
+      card.classList.add('expanded');
+      overlay.classList.add('visible');
+      btn.textContent = '\u2715';
+      btn.title = 'Close';
+    }
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(renderAll, 100);
+  });
+});
+overlay.addEventListener('click', () => {
+  document.querySelectorAll('.chart-card.expanded').forEach(c => {
+    c.classList.remove('expanded');
+    c.querySelector('.expand-btn').textContent = '\u26F6';
+  });
+  overlay.classList.remove('visible');
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderAll, 100);
+});
+
 loadData();
 </script>
 </body>
