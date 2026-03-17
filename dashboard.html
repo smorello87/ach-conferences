@@ -43,7 +43,7 @@ body::before {
   inset: 0;
   background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
   pointer-events: none;
-  z-index: 9999;
+  z-index: 1;
 }
 
 .site-header {
@@ -218,12 +218,11 @@ body::before {
   border-radius: 12px; padding: 2rem;
   box-shadow: 0 8px 40px rgba(0,0,0,0.3);
   overflow-y: auto;
-  background: var(--cream);
-  isolation: isolate;
+  background: #FFFDF7;
 }
 .chart-card.expanded .expand-btn { opacity: 1; }
 .chart-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
   z-index: 10000; display: none;
 }
 .chart-overlay.visible { display: block; }
