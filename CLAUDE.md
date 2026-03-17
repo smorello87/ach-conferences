@@ -29,32 +29,47 @@ Keyword generation requires `.env` file with `OPENAI_API_KEY=sk-...`. Without it
 
 ## Architecture
 
-Two-stage data pipeline feeding a single-file frontend:
+Three-source data pipeline feeding a single-file frontend:
 
 ```
-UVA relational CSVs ──► build_data.py ──┐
-                                        ├──► ach_data.json ──► dashboard.html
-ConfTool XLSX/XLS ──► ingest_conftool.py┘
+UVA relational CSVs ──► build_data.py ──────┐
+                                             ├──► ach_data.json ──► dashboard.html
+ConfTool XLSX/XLS ──► ingest_conftool.py ────┤                     about.html
+                                             │
+Web-scraped JSON ──► ingest_conftool.py ─────┘
 ```
 
 ### Data Pipeline
 
-**`build_data.py`** — Main pipeline. Joins 22 relational CSVs from `dh_full/dh_conferences_data/`, filters to ACH series (series ID `2`), generates keywords via OpenAI GPT-5.2 (batches of 50, JSON mode, temperature 0.3), then imports ConfTool records via `ingest_conftool.load_conftool_records()`. Outputs `ach_data.json`.
+**`build_data.py`** — Main pipeline. Joins 22 relational CSVs from `dh_full/dh_conferences_data/`, filters to ACH series (series ID `2`), generates keywords via OpenAI GPT-5.2 (batches of 50, JSON mode, temperature 0.3), then imports records via `ingest_conftool.load_conftool_records()`. Outputs `ach_data.json`.
 
-**`ingest_conftool.py`** — Parses ACH 2023 (`.xlsx` via openpyxl) and 2024 (`.xls` XML SpreadsheetML via stdlib `xml.etree.ElementTree`). Handles:
+**`ingest_conftool.py`** — Parses three data sources:
+- ACH 2023 (`.xlsx` via openpyxl)
+- ACH 2024 (`.xls` XML SpreadsheetML via stdlib `xml.etree.ElementTree`)
+- ACH 2025 (`ach2025_program.json` — scraped from conference website, no institutional affiliations)
+
+Handles:
 - Filtering: rejects `acceptance_status == -1`, `[CANCELLED]` sessions
 - Type mapping: `ACCEPTANCE_TYPE_MAP` dict maps ConfTool acceptance values → existing type strings
 - Institution/country extraction from `authors_formatted_N_organisation` columns (up to 14 authors), with `COUNTRY_ALIASES` normalization and `sa_country` fallback
 - Panel title cleaning: strips `#2B:` prefixes and `(Lightning Talks)` suffixes
 - Keyword generation: same GPT-5.2 approach but includes author-provided keywords as context
 
-Both scripts share `generated_keywords_cache.json` — keys are work IDs (numeric for UVA, `ct2023-*`/`ct2024-*` for ConfTool).
+Both scripts share `generated_keywords_cache.json` (gitignored) — keys are work IDs (numeric for UVA, `ct2023-*`/`ct2024-*` for ConfTool, `web2025-*` for web-scraped).
 
 ### Dashboard (`dashboard.html`)
 
-Single-file HTML app (~900 lines) using D3.js v7 and TopoJSON. Year slider range, subtitle text, and stats are set dynamically from `DATA.meta` on load. All charts rebuild reactively via `applyFilters()` → `renderAll()`.
+Single-file HTML app using D3.js v7 and TopoJSON. Features:
+- Year range slider, organizer/type/keyword filters with URL hash state (`#ymin=2019&org=ach-only`)
+- 7 sections: timeline, keywords, institutions, map, keyword trends, type breakdown (stacked bar), data table
+- CSV export of filtered results, shareable filter URLs via "Share View" button
+- Responsive design with breakpoints at 768px and 480px
 
-Uses safe DOM manipulation (createElement/textContent) — no innerHTML with dynamic content.
+All charts rebuild reactively via `applyFilters()` → `renderAll()`. Uses safe DOM manipulation (createElement/textContent) — no innerHTML with dynamic content.
+
+### About Page (`about.html`)
+
+Static page with project context, conference history, and full data source attribution with links. Shares visual styling with the dashboard.
 
 ### Output Record Schema
 
@@ -70,6 +85,7 @@ Each record in `ach_data.json`:
 - ConfTool 2024 `.xls`: Not binary XLS — it's XML SpreadsheetML. Cells use `ss:Index` attribute to skip columns; the parser must track column position manually.
 - ConfTool files have duplicate column names (e.g., `paperID`, `sa_country` appear twice). Parsers use first occurrence only.
 - Organisation strings use `;\n` or `\n` as multi-institution separators, with trailing `, Country Name` pattern for country extraction.
+- ACH 2025 web-scraped data has no institutional affiliations — they weren't listed on the conference website.
 
 ## ACH Conference Scope
 
@@ -78,14 +94,15 @@ The ACH/ICCH conference series (series ID `2`) spans:
 - **1989–2006**: Joint ACH/ALLC (US/Europe/Canada)
 - **2019–2025**: ACH renewed (Pittsburgh, Virtual, Houston, Fairfax, Virtual)
 
-Coverage gap: 2021 (indexed in UVA database, 0 works entered).
+Coverage gap: 2021 (indexed in UVA database, 0 works entered; program locked behind Humanities Commons membership).
 
 ## Adding Future Conference Years
 
 1. If from UVA database: replace `dh_full/` with new relational dump
 2. If from ConfTool: add the export file, update `ingest_conftool.py` with new file path/year/city, add any new acceptance values to `ACCEPTANCE_TYPE_MAP`
-3. Run `python3 build_data.py` — uses cache for previously processed works
-4. Dashboard picks up changes automatically from regenerated `ach_data.json`
+3. If from a conference website: scrape presentations into a JSON file (see `ach2025_program.json` for format), add a loader function in `ingest_conftool.py`
+4. Run `python3 build_data.py` — uses cache for previously processed works
+5. Dashboard picks up changes automatically from regenerated `ach_data.json`
 
 ## Data Sources
 
@@ -95,4 +112,4 @@ Coverage gap: 2021 (indexed in UVA database, 0 works entered).
 - **ConfTool exports** (covers ACH 2023 Houston, 2024 Fairfax): exported XLSX/XLS files in repo, parsed by `ingest_conftool.py`
 - **ACH 2025 web program** (Virtual): scraped from https://ach2025.ach.org/en/program/, stored as `ach2025_program.json`, parsed by `ingest_conftool.py`. No institutional affiliations available.
 
-Data source attribution is displayed in the dashboard footer.
+Data source attribution is displayed on the about page.
