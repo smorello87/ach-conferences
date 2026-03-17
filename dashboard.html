@@ -214,7 +214,7 @@ body::before {
 .expand-btn:hover { border-color: var(--amber); color: var(--amber); }
 
 .chart-card.expanded {
-  position: fixed; inset: 2rem; z-index: 500;
+  position: fixed; inset: 2rem; z-index: 10001;
   border-radius: 12px; padding: 2rem;
   box-shadow: 0 8px 40px rgba(0,0,0,0.3);
   overflow-y: auto;
@@ -222,7 +222,7 @@ body::before {
 .chart-card.expanded .expand-btn { opacity: 1; }
 .chart-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-  z-index: 499; display: none;
+  z-index: 10000; display: none;
 }
 .chart-overlay.visible { display: block; }
 .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
