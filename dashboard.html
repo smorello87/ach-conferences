@@ -1161,6 +1161,26 @@ let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderAll, 200); });
 // Expand/collapse chart cards
 const overlay = document.getElementById('chartOverlay');
+let expandedOrigParent = null, expandedOrigNext = null;
+
+function collapseCard() {
+  const card = document.querySelector('.chart-card.expanded');
+  if (!card) return;
+  card.classList.remove('expanded');
+  card.querySelector('.expand-btn').textContent = '\u26F6';
+  // Move back to original position
+  if (expandedOrigParent) {
+    if (expandedOrigNext) expandedOrigParent.insertBefore(card, expandedOrigNext);
+    else expandedOrigParent.appendChild(card);
+  }
+  overlay.classList.remove('visible');
+  document.body.classList.remove('chart-expanded');
+  expandedOrigParent = null;
+  expandedOrigNext = null;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderAll, 100);
+}
+
 document.querySelectorAll('.chart-card').forEach(card => {
   const btn = document.createElement('button');
   btn.className = 'expand-btn';
@@ -1170,33 +1190,24 @@ document.querySelectorAll('.chart-card').forEach(card => {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (card.classList.contains('expanded')) {
-      card.classList.remove('expanded');
-      overlay.classList.remove('visible');
-      document.body.classList.remove('chart-expanded');
-      btn.textContent = '\u26F6';
-      btn.title = 'Expand';
+      collapseCard();
     } else {
-      document.querySelectorAll('.chart-card.expanded').forEach(c => c.classList.remove('expanded'));
+      collapseCard(); // collapse any other
+      // Save original position then move to body
+      expandedOrigParent = card.parentNode;
+      expandedOrigNext = card.nextSibling;
+      document.body.appendChild(card);
       card.classList.add('expanded');
       overlay.classList.add('visible');
       document.body.classList.add('chart-expanded');
       btn.textContent = '\u2715';
       btn.title = 'Close';
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(renderAll, 100);
     }
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(renderAll, 100);
   });
 });
-overlay.addEventListener('click', () => {
-  document.querySelectorAll('.chart-card.expanded').forEach(c => {
-    c.classList.remove('expanded');
-    c.querySelector('.expand-btn').textContent = '\u26F6';
-  });
-  overlay.classList.remove('visible');
-  document.body.classList.remove('chart-expanded');
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(renderAll, 100);
-});
+overlay.addEventListener('click', collapseCard);
 
 loadData();
 </script>
