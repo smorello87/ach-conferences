@@ -896,8 +896,9 @@ function renderTrends() {
   const height = chartHeight(container, 280) - margin.top - margin.bottom;
 
   const kwCount = {};
+  const trendExclude = ['digital humanities', 'humanities computing'];
   filtered.forEach(r => r.keywords.forEach(k => { kwCount[k] = (kwCount[k]||0)+1; }));
-  const topKws = Object.entries(kwCount).sort((a,b) => b[1]-a[1]).slice(0,5).map(d => d[0]);
+  const topKws = Object.entries(kwCount).filter(d => !trendExclude.includes(d[0])).sort((a,b) => b[1]-a[1]).slice(0,5).map(d => d[0]);
   const years = [...new Set(filtered.map(r => r.year))].sort();
   const series = topKws.map(kw => ({
     keyword: kw,
