@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Parse ACH 2023/2024 ConfTool exports and ACH 2025 web program into records matching build_data.py schema."""
 
-import json, os, re, sys, time
+import csv, json, os, re, sys, time
 import xml.etree.ElementTree as ET
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_2023 = os.path.join(SCRIPT_DIR, "ACH2023Conference_all_contributions_data_papers_2024-01-12_19-42-17.xlsx")
 FILE_2024 = os.path.join(SCRIPT_DIR, "ACH2024Conference_papers_2024-11-15_12-57-31.xls")
 FILE_2025 = os.path.join(SCRIPT_DIR, "ach2025_program.json")
+FILE_2026 = os.path.join(SCRIPT_DIR, "ach2026_program.csv")
+FILE_2026_CREATIVE = os.path.join(SCRIPT_DIR, "ach2026_creative.csv")
 KEYWORD_CACHE = os.path.join(SCRIPT_DIR, "generated_keywords_cache.json")
 
 # ---- Country normalization ----
@@ -401,6 +403,167 @@ def load_2025_rows():
     return records
 
 
+# ---- 2026 CSV parser ----
+def load_2026_rows():
+    """Parse the 2026 schedule CSV into structured rows.
+
+    Source CSV columns: Panel No., Panel Title, Paper ID, Paper Title, Authors,
+    Keywords, Time Zone, Limitations, Scheduled?
+
+    Rows with an empty Paper Title represent full-panel submissions accepted as
+    a unit — the Panel Title is promoted to the work title and the type becomes
+    "panel / roundtable" (matching how 2025 web-scraped panels are handled).
+
+    Text is run through ftfy to repair UTF-8-as-cp1252 mojibake (em dashes,
+    smart quotes, accented characters) introduced upstream.
+    """
+    import ftfy
+
+    with open(FILE_2026, "r", encoding="utf-8", errors="replace", newline="") as f:
+        rows = list(csv.DictReader(f))
+
+    records = []
+    for row in rows:
+        # Fix mojibake on every cell
+        row = {k: ftfy.fix_text(v).strip() if v else "" for k, v in row.items()}
+
+        scheduled = row.get("Scheduled?", "").upper()
+        if scheduled and scheduled != "TRUE":
+            continue
+
+        panel_no = row.get("Panel No.", "")
+        panel_title = row.get("Panel Title", "")
+        paper_id = row.get("Paper ID", "")
+        paper_title = row.get("Paper Title", "")
+        raw_keywords = parse_keywords_string(row.get("Keywords", ""))
+
+        if paper_title:
+            # Regular paper inside a panel
+            rec_id = f"ct2026-{paper_id}" if paper_id else f"ct2026-p{panel_no}-{len(records)+1}"
+            title = paper_title
+            panel = panel_title
+            work_type = "paper"
+        else:
+            # No paper title: either a full-panel submission (has paperID) or a
+            # placeholder row whose contents come from another source CSV (no paperID).
+            if not paper_id or not panel_title:
+                continue
+            rec_id = f"ct2026-{paper_id}"
+            title = panel_title
+            panel = ""
+            work_type = "panel / roundtable"
+
+        records.append({
+            "id": rec_id,
+            "year": 2026,
+            "conference": "2026 - Virtual",
+            "organizers": "ACH",
+            "title": title,
+            "panel": panel,
+            "type": work_type,
+            "is_parent": False,
+            "keywords": [],
+            "institutions": [],
+            "countries": [],
+            "_raw_keywords": raw_keywords,
+        })
+
+    return records
+
+
+# ---- 2026 Creative Presentations CSV parser ----
+def load_2026_creative_rows():
+    """Parse the 2026 Creative Presentations CSV.
+
+    Source CSV columns: Session, paperID, authors, title, keywords, Language,
+    Topics, Type, <blank>, Time Zone, <blank>
+
+    The file ends with two summary rows (after blank separators) of the form
+    `<session>,<theme>,,,,,,,,,` that label each session's panel theme. Those
+    themes become the panel titles for the records in that session.
+
+    These 22 presentations fill the slots reserved as panels 20/21 (Creative
+    Presentations) in the main schedule CSV.
+    """
+    import ftfy
+
+    with open(FILE_2026_CREATIVE, "r", encoding="utf-8", errors="replace", newline="") as f:
+        rows = list(csv.reader(f))
+
+    if not rows:
+        return []
+
+    # Skip header; collect data rows (paperID numeric) and theme rows (paperID non-numeric)
+    themes = {}
+    data_rows = []
+    for row in rows[1:]:
+        # Pad row to at least 5 cells
+        row = row + [""] * max(0, 5 - len(row))
+        session = row[0].strip()
+        col1 = row[1].strip()
+        if not session and not col1:
+            continue
+        if col1.isdigit():
+            data_rows.append(row)
+        elif col1 and session:
+            themes[session] = ftfy.fix_text(col1).strip()
+
+    # Build a readable panel label from the session's theme. Source themes are
+    # lowercase phrases; we capitalize sensibly without mangling acronyms.
+    LOWERCASE_WORDS = {"a", "an", "the", "and", "or", "of", "in", "on", "for"}
+    ACRONYMS = {"dh", "ai", "llm"}
+
+    def smart_capitalize(phrase):
+        words = re.split(r'(\s+|,\s*)', phrase)
+        out = []
+        for i, w in enumerate(words):
+            if not w.strip() or w.strip() == ",":
+                out.append(w)
+                continue
+            lw = w.lower()
+            if lw in ACRONYMS:
+                out.append(lw.upper())
+            elif i == 0 or lw not in LOWERCASE_WORDS:
+                out.append(w[0].upper() + w[1:])
+            else:
+                out.append(lw)
+        return "".join(out)
+
+    def panel_label(session):
+        theme = themes.get(session, "")
+        if not theme:
+            return "Creative Presentations"
+        return f"Creative Presentations: {smart_capitalize(theme)}"
+
+    records = []
+    for row in data_rows:
+        row = [ftfy.fix_text(c).strip() if c else "" for c in row]
+        session = row[0]
+        paper_id = row[1]
+        title = row[3] if len(row) > 3 else ""
+        kw_string = row[4] if len(row) > 4 else ""
+
+        if not title:
+            continue
+
+        records.append({
+            "id": f"ct2026-{paper_id}",
+            "year": 2026,
+            "conference": "2026 - Virtual",
+            "organizers": "ACH",
+            "title": title,
+            "panel": panel_label(session),
+            "type": "creative presentation",
+            "is_parent": False,
+            "keywords": [],
+            "institutions": [],
+            "countries": [],
+            "_raw_keywords": parse_keywords_string(kw_string),
+        })
+
+    return records
+
+
 # ---- Keyword generation via OpenAI ----
 def generate_keywords(records, kw_cache):
     """Generate keywords for ConfTool records using GPT-5.2, incorporating author keywords."""
@@ -486,7 +649,13 @@ def load_conftool_records():
     records_2025 = load_2025_rows()
     print(f"  2025 (Virtual): {len(records_2025)} program entries")
 
-    all_records = records_2023 + records_2024 + records_2025
+    records_2026 = load_2026_rows()
+    print(f"  2026 (Virtual): {len(records_2026)} program entries")
+
+    records_2026_creative = load_2026_creative_rows()
+    print(f"  2026 (Virtual, Creative): {len(records_2026_creative)} creative presentations")
+
+    all_records = records_2023 + records_2024 + records_2025 + records_2026 + records_2026_creative
 
     # Load keyword cache
     kw_cache = {}
